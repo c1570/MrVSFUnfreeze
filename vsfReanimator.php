@@ -2,6 +2,9 @@
   // modified version of vsfReanimator
   // https://sourceforge.net/p/viceplus/code/HEAD/tree/trunk/tools/vsfReanimator/vsfReanimator.php
 
+  $stage3runaddr = 0x0700;
+  $stage2runaddr = 0x8900;
+
   function word($word) {
     return chr($word & 0xff) . chr($word >> 8);
   }
@@ -116,7 +119,7 @@
   //TODO timing: offset CIA timers/scan line
 
   $stage3 = '';
-  $curaddr = $stage3runaddr = 0x0700;
+  $curaddr = $stage3runaddr;
   // Set $1/$0
   $stage3 .= writeToMem(1, substr($mem, 0x16, 1));
   $stage3 .= writeToMem(0, substr($mem, 0x17, 1));
@@ -132,7 +135,7 @@
             ord($cpu[0x1e]) + (ord($cpu[0x1f]) << 8)); // Jmpto
 
   $stage2 = '';
-  $curaddr = $stage2runaddr = 0x9c00;
+  $curaddr = $stage2runaddr;
   // Init CIA1
   $cia1 = getModule($vsf, "CIA1", 2, 2);
   $stage2 .= writeToMem(0xdc0d, "\x1f\x00\x00"); // unset irq mask, stop timer

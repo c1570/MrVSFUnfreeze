@@ -12,4 +12,4 @@ For crunching, MVU uses [LZSA1](https://github.com/emmanuel-marty/lzsa) and 6502
 The VSF unfreeze code is a modified version of [VSFReanimator](https://sourceforge.net/p/viceplus/code/HEAD/tree/trunk/tools/vsfReanimator/).
 
 For building your own cartridge, you will need to adjust sources (file segments, compression, helper starting offset).
-The comments available in the files might help a bit with that.
+The comments available in [cartridge.asm](cartridge.asm) might help a bit with that.

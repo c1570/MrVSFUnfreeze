@@ -1,17 +1,7 @@
 #!/bin/bash
 set -o errexit
 
-# Build customized cartridge (MAGIC DESK 64k = 8 banks, 8k each, visible at $8000-$9FFF).
-# 64k are not enough to hold both the uncompressed game and uncompressed splash screen.
-# So hold as much data as possible in uncompressed form.
-# Compress a few bits (game $0801-$2FFF, $D000-) using fast LZSA1.
-# Splash graphics ($1C00-$2FFF plus colmem) are stored uncompressed in bank 0.
-
-# Unfortunately, the C64's PLA does not provide a "CART_LOW + RAM" option which would
-# be handy for decompressing from ROM directly (as the decompressor needs access to
-# decompressed data).
-# Consequently, we can only decompress directly to $0000-$9FFF and $C000-$CFFF.
-# To other areas, we can only copy.
+# documentation see cartridge.asm
 
 # Koala pic: 0x00 0x60, 8000 bytes bitmap, 1000 bytes screen mem, 1000 bytes col mem, 1 byte bkgcol
 
@@ -46,9 +36,8 @@ rm -f cmpr_*.bin
 "$DCWD/lzsa" -stats -f 1 -m 5 -r mem_02.bin cmpr_02.bin
 "$DCWD/lzsa" -stats -f 1 -m 5 -r mem_08.bin cmpr_08.bin
 "$DCWD/lzsa" -stats -f 1 -m 5 -r mem_30.bin cmpr_30.bin
-"$DCWD/lzsa" -stats -f 1 -m 5 -r mem_40.bin cmpr_40.bin
+"$DCWD/lzsa" -stats -f 1 -m 4 -r mem_40.bin cmpr_40.bin
 "$DCWD/lzsa" -stats -f 1 -m 5 -r mem_64.bin cmpr_64.bin
-"$DCWD/lzsa" -stats -f 1 -m 5 -r mem_80.bin cmpr_80.bin
 "$DCWD/lzsa" -stats -f 1 -m 5 -r koa_screen.bin cmpr_screen.bin
 "$DCWD/lzsa" -stats -f 1 -m 5 -r koa_colmem.bin cmpr_colmem.bin
 cat cmpr_screen.bin cmpr_colmem.bin > cmpr_koala_scrcol.bin

@@ -1,5 +1,23 @@
+; Build customized cartridge (MAGIC DESK 64k = 8 banks, 8k each, visible at $8000-$9FFF).
+; 64k are not enough to hold both the uncompressed game and uncompressed splash screen.
+; Hold as much data as possible in uncompressed form.
+; Splash graphics (bitmap at $4000) are stored without compression.
+
+; Unfortunately, the C64's PLA does not provide a "CART_LOW + RAM" option which would
+; be handy for decompressing from ROM directly (as the decompressor needs access to
+; decompressed data).
+; Consequently, we can only decompress directly to $0000-$9FFF and $C000-$CFFF.
+; Other areas can be copied to (without decompressing). Of course decompressing
+; to RAM, then copying to, e.g., $A000, is possible. Copying compressed data
+; then uncompressing works, too.
+; However, be aware that setting the MSB of $DE00 is is sticky for some
+; hardware, i.e., once you disable EXROM there, the cartridge ROM is gone for
+; good (until reset).
+
+; Magic Desk CRT info
 ; https://codebase64.org/doku.php?id=base:crt_file_format#magic_desk_domark_hes_australia
-; Available PLA configurations:
+
+; Available PLA configurations
 ; $01	GAME 	EXROM
 ; x7	1 	1 	Int. RAM 	Int. RAM 	BASIC ROM 	Int. RAM 	I/O 	Kernal ROM
 ; x3	1 	1 	Int. RAM 	Int. RAM 	BASIC ROM 	Int. RAM 	Charset ROM 	Kernal ROM
@@ -14,7 +32,9 @@
 * = $0
 
 ; ********************* BANK 0
-; * CRT helper, LZSA decompressor, compressed splash gfx screen scrmem and colmem
+; * CRT start code and helper, LZSA decompressor,
+; * compressed splash gfx screen scrmem and colmem,
+; * VSF unfreezer stage 2/3, compressed $4000-$6400 data
 
 !pseudopc $8000 {
 !word cold_start
@@ -154,7 +174,6 @@ sta LZSA_DST_HI
 jsr DECOMPRESS_LZSA1_FAST
 
 ; bank 7: $8000-$9FFF
-; have to copy that to RAM $C000 then disable cartridge ROM to decompress
 lda #7
 sta $de00
 lda #$00
@@ -162,21 +181,10 @@ sta LZSA_SRC_LO
 sta LZSA_DST_LO
 lda #$80
 sta LZSA_SRC_HI
-lda #$C0
-sta LZSA_DST_HI
-ldx #$10 ; just a guess for length
-jsr justcopy
-
-lda #$80 ; disable cartridge
-sta $de00
-lda #$00
-sta LZSA_SRC_LO
-sta LZSA_DST_LO
-lda #$C0
-sta LZSA_SRC_HI
 lda #$80
 sta LZSA_DST_HI
-jsr DECOMPRESS_LZSA1_FAST
+ldx #$20
+jsr justcopy
 
 ; bank 4: $A000-$BFFF
 lda #4
@@ -253,8 +261,8 @@ bne waitclr2
 lda $d011
 bmi waitclr2
 
-; bank 7: $4000-$6400
-lda #7
+; bank 0: $4000-$6400
+lda #0
 sta $de00
 lda #$00
 sta LZSA_DST_LO
@@ -302,9 +310,12 @@ cmpr_00_01_02:
 !binary "build/cmpr_01.bin"
 !binary "build/cmpr_02.bin"
 
-!align $ffff, $9c00
+!align $ffff, $8900
 stage2:
 !binary "build/stage2.prg",,2
+
+cmpr_40:
+!binary "build/cmpr_40.bin"
 }
 
 ; ********************* BANK 1
@@ -361,10 +372,5 @@ stage2:
 !align $ffff, $E000
 
 !pseudopc $8000 {
-!binary "build/cmpr_80.bin"
-cmpr_40:
-!binary "build/cmpr_40.bin"
+!binary "build/mem_80.bin"
 }
-
-!align $ffff, $ffff
-!byte 0
